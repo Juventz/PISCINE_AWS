@@ -14,7 +14,7 @@ class User(BaseModel):
 
 
 # Liste d'utilisateurs temporaires
-users = []
+users: List[User] = []
 
 
 # Route pour ajouter un utilisateur
