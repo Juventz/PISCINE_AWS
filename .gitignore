@@ -10,6 +10,7 @@ test.db
 # Environnement virtuel
 venv/
 .venv/
+.env
 
 # Logs et temporaires
 *.log
