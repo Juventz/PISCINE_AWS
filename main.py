@@ -1,44 +1,10 @@
 from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel, EmailStr, conint
-from typing import List
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
-
-# Connexion à la base de données
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Déclaration de la base de données
-Base = declarative_base()
-
-
-# Modèle de la table User
-class UserDB(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    email = Column(String, unique=True, index=True)
-    age = Column(Integer)
-
-
-# Création de la table User
-Base.metadata.create_all(bind=engine)
+from sqlalchemy.orm import Session
+from models import UserDB
+from database import SessionLocal
+from schemas import User, UserCreate
 
 app = FastAPI()
-
-
-# Modèle d'utilisateur pour la création
-class UserCreate(BaseModel):
-    name: str
-    email: EmailStr
-    age: conint(ge=18)
-
-
-# Modèle d'utilisateur avec l'ID
-class User(UserCreate):
-    id: int
 
 
 def get_db():
@@ -58,7 +24,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    db_user = UserDB(**user.dict())
+    db_user = UserDB(**user.model_dump())
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -88,7 +54,7 @@ def update_user(user_id: int, user: UserCreate, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail="Email already registered")
 
     # Mise à jours des champs
-    for key, value in user.dict().items():
+    for key, value in user.model_dump().items():
         setattr(db_user, key, value)
 
     db.commit()

@@ -1,0 +1,16 @@
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Base de données SQLite
+test.db
+*.sqlite3
+
+# Environnement virtuel
+venv/
+.venv/
+
+# Logs et temporaires
+*.log
+*.tmp
