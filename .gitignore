@@ -11,7 +11,13 @@ test.db
 venv/
 .venv/
 .env
+.env.*
 
 # Logs et temporaires
 *.log
 *.tmp
+
+# Dependances
+Pipfile
+Pipfile.lock
+poetry.lock
