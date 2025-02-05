@@ -1,60 +1,111 @@
-from app.models import Base
 import pytest
-from sqlalchemy import create_engine, text
+from fastapi.testclient import TestClient
+from app.main import app, get_db
+from app.models import UserDB, Base
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
-import os
+from app.database import SQLALCHEMY_DATABASE_URL
+# import uuid
 
-load_dotenv()
+SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///:memory:"
 
-HOST = os.getenv("DB_HOST")
-PORT = os.getenv("DB_PORT")
-USERNAME = os.getenv("DB_USERNAME")
-PASSWORD = os.getenv("DB_PASSWORD")
-DATABASE = os.getenv("DB_NAME") + "_test"
+engine = create_engine(SQLALCHEMY_TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-# Moteur sans base sélectionnée pour gérer la création/suppression
-SQLALCHEMY_ROOT_URL = f"mysql+pymysql://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/"
-engine_root = create_engine(SQLALCHEMY_ROOT_URL)
+def override_get_db():
+    db = SessionLocal()  # Utilise SQLite en mémoire
+    try:
+        yield db
+    finally:
+        db.close()
 
-# Moteur pour la base de test
-SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}"
-engine_test = create_engine(SQLALCHEMY_DATABASE_URL)
+app.dependency_overrides[get_db] = override_get_db
 
-# Crée une session pour interagir avec la base de données
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine_test)
+# TestClient de FastAPI pour envoyer des requêtes HTTP à l'API
+client = TestClient(app)
 
-@pytest.fixture(scope="module")
-def db():
-# Créer la base de test si elle n'existe pas
-    with engine_root.connect() as conn:
-        conn.execution_options(isolation_level="AUTOCOMMIT").execute(text(f"CREATE DATABASE IF NOT EXISTS {DATABASE};"))
-
-    # Créer les tables dans la base de test
-    Base.metadata.create_all(bind=engine_test)
-
-    # Créer une session pour interagir avec la base de test
-    db_session = SessionLocal()
-
-    yield db_session  # Exécute les tests avec cette session
-
-    # Nettoyage après tests
-    db_session.close()
-    Base.metadata.drop_all(bind=engine_test)
-
-    # Supprimer la base de test après les tests
-    with engine_root.connect() as conn:
-        conn.execution_options(isolation_level="AUTOCOMMIT").execute(text(f"DROP DATABASE IF EXISTS {DATABASE};"))
+# session de test pour chaque test
+@pytest.fixture
+def db_session():
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    session = SessionLocal()
+    try:
+        yield session
+        session.rollback()
+    finally:
+        session.close()
 
 
-# Test simple de connexion
-def test_example(db):
-    result = db.execute(text("SELECT 1")).fetchone()
-    assert result is not None
+# # Fonction pour générer un email unique
+# def generate_unique_email():
+#     return f"testuser_{uuid.uuid4().hex}@example.com"
 
 
-# Test de performance avec EXPLAIN
-def test_performance(db):
-    result = db.execute(text("EXPLAIN SELECT * FROM users")).fetchall()
-    assert len(result) > 0  # Vérifie que MySQL retourne un plan d'exécution
+def test_create_user(db_session):
+    # user_data = {"email": generate_unique_email(), "name": "Test User", "age": 25}
+    user_data = {"email": "testuser1@example.com", "name": "Test User", "age": 25}
+
+
+    response = client.post("/users/", json=user_data)
+    assert response.status_code == 200
+    assert response.json()["email"] == user_data["email"]
+    assert response.json()["name"] == user_data["name"]
+    assert response.json()["age"] == user_data["age"]
+
+
+# def test_get_user(db_session):
+#     user_data = {"email": generate_unique_email(), "name": "Test User", "age": 25}
+
+#     user = UserDB(**user_data)
+#     db_session.add(user)
+#     db_session.commit()
+#     db_session.refresh(user)
+
+#     print(f"User ID: {user.id}")  # Ajoutez ceci pour vérifier que l'ID est bien récupéré
+
+#     response = client.get(f"/users/{user.id}")
+#     assert response.status_code == 200
+#     assert response.json()["email"] == user_data["email"]
+#     assert response.json()["name"] == user_data["name"]
+#     assert response.json()["age"] == user_data["age"]
+
+
+# def test_update_user(db_session):
+#     user_data = {"email": generate_unique_email(), "name": "Test User", "age": 25}
+
+#     user = UserDB(**user_data)
+#     db_session.add(user)
+#     db_session.commit()
+#     db_session.refresh(user)
+
+#     update_data = {"email": "testuser2@example.com", "name": "Update Test User", "age": 26}
+#     response = client.put(f"/users/{user.id}", json=update_data)
+
+#     assert response.status_code == 200
+#     assert response.json()["email"] == update_data["email"]
+#     assert response.json()["name"] == update_data["name"]
+#     assert response.json()["age"] == update_data["age"]
+
+
+# def test_delete_user(db_session):
+#     user_data = {"email": generate_unique_email(), "name": "Test User", "age": 25}
+
+#     user = UserDB(**user_data)
+#     db_session.add(user)
+#     db_session.commit()
+#     db_session.refresh(user)
+
+#     print(f"User ID: {user.id}")
+
+#     response = client.delete(f"/users/{user.id}")
+
+#     assert response.status_code == 200
+#     assert response.json()["email"] == user_data["email"]
+#     assert response.json()["name"] == user_data["name"]
+#     assert response.json()["age"] == user_data["age"]
+
+#     db_user = db_session.query(UserDB).filter(UserDB.id == user.id).first()
+#     print(db_user)
+#     assert db_user is None
