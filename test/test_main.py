@@ -1,7 +1,7 @@
+from app.models import Base
 import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from app.models import Base
 from dotenv import load_dotenv
 import os
 
@@ -12,6 +12,7 @@ PORT = os.getenv("DB_PORT")
 USERNAME = os.getenv("DB_USERNAME")
 PASSWORD = os.getenv("DB_PASSWORD")
 DATABASE = os.getenv("DB_NAME") + "_test"
+
 
 # Moteur sans base sélectionnée pour gérer la création/suppression
 SQLALCHEMY_ROOT_URL = f"mysql+pymysql://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/"
