@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from app.models import Base
-import pymysql
 from dotenv import load_dotenv
 import os
 
@@ -30,8 +29,6 @@ with engine_root.connect() as conn:
     # Supprimer mes databases existantes
     # conn.execute(text("DROP DATABASE IF EXISTS My_Database;"))
     # print("Database 'My_Database' dropped.")
-    # conn.execute(text("DROP DATABASE IF EXISTS My_Database_test;"))
-    # print("Database 'My_Database_test' dropped.")
 
 # Afficher toutes les bases de données existantes
 with engine_root.connect() as conn:
