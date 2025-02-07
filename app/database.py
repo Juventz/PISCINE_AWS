@@ -19,16 +19,11 @@ engine_root = create_engine(SQLALCHEMY_ROOT_URL)
 # Connexion à la base de données réelle
 SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
-
-# Création de la session
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Créer la base de données si elle n'existe pas
 with engine_root.connect() as conn:
     conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {DATABASE};"))
-    # Supprimer mes databases existantes
-    # conn.execute(text("DROP DATABASE IF EXISTS My_Database;"))
-    # print("Database 'My_Database' dropped.")
 
 # Afficher toutes les bases de données existantes
 with engine_root.connect() as conn:
