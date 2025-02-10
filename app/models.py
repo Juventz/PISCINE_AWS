@@ -9,3 +9,9 @@ class UserDB(Base):
     name = Column(String(255), index=True)
     email = Column(String(255), unique=True, index=True)
     age = Column(Integer)
+
+
+class OperationsStats(Base):
+    __tablename__ = 'operations_stats'
+    operation_id = Column(String(255), primary_key=True, index=True)
+    count = Column(Integer, nullable=False)
