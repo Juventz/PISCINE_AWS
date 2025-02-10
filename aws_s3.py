@@ -65,4 +65,4 @@ if __name__ == "__main__":
 
     # Download file from S3
     if files:
-        download_from_s3(files[0], f"downloads/{files[0]}")
+        download_from_s3(files[0], os.path.expanduser(f"~/Downloads/{files[0]}"))
