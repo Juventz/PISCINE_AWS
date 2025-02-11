@@ -1,62 +1,87 @@
-# import pytest
-# from fastapi.testclient import TestClient
-# from app.main import app
-# from app.models import UserDB, Base
-# from app.database import SessionLocal, engine
-# from sqlalchemy.orm import Session
+from fastapi.testclient import TestClient
+from app.main import app
+from app.database import SessionLocal
+from app.schemas import UserCreate
+from app import crud
 
-# # Initialiser le client de test FastAPI
-# client = TestClient(app)
+# Initialiser le client de test FastAPI
+client = TestClient(app)
 
-# # Fixture pour gérer la session de test
-# @pytest.fixture(scope="function")
-# def db_session():
-#     session = SessionLocal()
-#     Base.metadata.create_all(bind=engine)  # Créer les tables si elles n'existent pas
-#     yield session  # Fournir la session au test
-#     session.rollback()  # Nettoyer après chaque test
-#     session.close()
 
-# # Test de création d'utilisateur
-# def test_create_user(db_session):
-#     user_data = {
-#         "email": "testuser@example.com",
-#         "name": "Test User",
-#         "age": 25
+def create_test_user():
+    """Crée un utilisateur de test dans la base de données."""
+
+    user_data = {
+        "email": "testuser@example.com",
+        "name": "Test User",
+        "age": 42
+    }
+    user = UserCreate(**user_data)
+    return user
+
+
+def test_create_user():
+    user = create_test_user()
+
+    # Envoyer une requête POST à l'API
+    response = client.post("/users/", json=user.dict())
+
+    assert response.status_code == 200
+    response_data = response.json()
+    assert "id" in response_data
+    assert response_data["email"] == user.email
+    assert response_data["name"] == user.name
+    assert response_data["age"] == user.age
+
+
+# def test_get_user():
+#     user = create_test_user()
+
+#     response = client.post("/users/", json=user.dict())
+#     # Récupérer l'utilisateur créé
+#     created_user = response.json()
+
+#     # Envoyer une requête GET à l'API pour récupérer l'utilisateur
+#     response = client.get(f"/users/{created_user['id']}")
+#     assert response.status_code == 200
+#     response_data = response.json()
+#     assert response_data["id"] == created_user["id"]
+#     assert response_data["email"] == created_user["email"]
+#     assert response_data["name"] == created_user["name"]
+#     assert response_data["age"] == created_user["age"]
+
+
+# def test_update_user():
+#     user = create_test_user()
+
+#     response = client.post("/users/", json=user.dict())
+#     created_user = response.json()
+
+#     updated_data = {
+#         "email": "updateuser@example.com",
+#         "name": "Update User",
+#         "age": 24
 #     }
-    
-#     response = client.post("/users/", json=user_data)
-    
-#     # Debugging: Afficher la réponse pour voir s'il y a une erreur
-#     print("Response status:", response.status_code)
-#     print("Response body:", response.json())
+#     response = client.put(f"/users/{created_user['id']}", json=updated_data)
 
 #     assert response.status_code == 200
-#     assert response.json()["email"] == user_data["email"]
-#     assert response.json()["name"] == user_data["name"]
-#     assert response.json()["age"] == user_data["age"]
+#     response_data = response.json()
+#     assert response_data["email"] == updated_data["email"]
+#     assert response_data["name"] == updated_data["name"]
+#     assert response_data["age"] == updated_data["age"]
 
-# # Test pour récupérer un utilisateur
-# def test_get_user(db_session):
-#     user_data = {
-#         "email": "testuser@example.com",
-#         "name": "Test User",
-#         "age": 25
-#     }
 
-#     # Insérer un utilisateur directement dans la base
-#     user = UserDB(**user_data)
-#     db_session.add(user)
-#     db_session.commit()
-#     db_session.refresh(user)
+# def test_delete_user():
+#     user = create_test_user()
 
-#     response = client.get(f"/users/{user.id}")
+#     response = client.post("/users/", json=user.dict())
+#     created_user = response.json()
 
-#     # Debugging: Afficher la réponse
-#     print("Response status:", response.status_code)
-#     print("Response body:", response.json())
-
+#     response = client.delete(f"/users/{created_user['id']}")
 #     assert response.status_code == 200
-#     assert response.json()["email"] == user_data["email"]
-#     assert response.json()["name"] == user_data["name"]
-#     assert response.json()["age"] == user_data["age"]
+#     response_data = response.json()
+#     assert response_data["id"] == created_user["id"]
+
+#     # Vérifier que l'utilisateur a été supprimé de la base de données
+#     response = client.get(f"/users/{created_user['id']}")
+#     assert response.status_code == 404
