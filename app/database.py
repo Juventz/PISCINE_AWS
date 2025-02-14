@@ -6,7 +6,7 @@ import os
 
 load_dotenv()
 
-TEST_MODE = os.getenv("TEST_MODE", "False") == "True"
+TEST_MODE = os.getenv("TEST_MODE")
 
 if TEST_MODE:
     print("Running in TEST MODE: Using SQLite in-memory database")

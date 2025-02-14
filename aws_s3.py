@@ -20,7 +20,7 @@ def upload_to_s3(file_path, bucket_name=AWS_BUCKET_NAME):
     file_name = os.path.basename(file_path)
     try:
         s3_client.upload_file(file_path, bucket_name, file_name)
-        print(f"File uploaded successfully to {bucket_name}")
+        print(f"File uploaded successfully: s3://{bucket_name}/{file_name}")
     except Exception as e:
         print(f"Error uploading file to {bucket_name}: {e}")
 
@@ -61,7 +61,10 @@ if __name__ == "__main__":
 
     # List files in S3
     files = list_s3_files()
-    print(f"Files in S3: {files}")
+    print("Files in S3: [")
+    for file in files:
+        print(f"    '{file}',")
+    print("]")
 
     # Download file from S3
     if files:
